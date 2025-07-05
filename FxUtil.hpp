@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 /** Creates a new context that will call the given function at the end of scope */
 template <typename FuncType>
 class FxDeferObject

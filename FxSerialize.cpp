@@ -4,9 +4,6 @@
 #include "FxTypes.hpp"
 #include "FxUtil.hpp"
 
-#include <iostream>
-
-
 #define REVERT_INDEX_AFTER_SCOPE \
     uint32 old_index_ = Index; \
     FxDefer([&] { Index = old_index_; })
@@ -23,14 +20,6 @@ static FILE* FxFileOpen(const char* filename, const char* mode)
     return fopen(filename, mode);
 }
 
-
-
-static uint16 FxSerializeTypeIdCount = 1;
-
-uint16* GetSerializeTypeIdCount()
-{
-    return &FxSerializeTypeIdCount;
-}
 
 
 void FxSerializerBaseSection::Create(uint32 buffer_size)
@@ -264,15 +253,6 @@ void FxSerializeValue(FxSerializerIO& writer, const int32& value)
     writer.DataSection.Write32(static_cast<uint32>(value));
 }
 
-template <>
-void FxSerializeValue(FxSerializerIO& writer, const std::string& value)
-{
-    const uint32 str_size = value.size();
-
-    // Write the size of the string
-    writer.DataSection.Write16(str_size);
-    writer.DataSection.WriteBuffer(str_size, reinterpret_cast<const uint8_t*>(value.c_str()));
-}
 
 template <>
 void FxSerializeValue(FxSerializerIO& writer, const float32& value)
@@ -281,13 +261,38 @@ void FxSerializeValue(FxSerializerIO& writer, const float32& value)
 }
 
 template <>
-void FxDeserializeValue(FxSerializerIO& writer, int32* value)
+void FxSerializeValue(FxSerializerIO& writer, const std::string& value)
 {
-    (*value) = writer.DataSection.Read32();
+    const uint32 str_size = value.size();
+
+    // Write the size of the string
+    writer.DataSection.Write16(str_size);
+    writer.DataSection.WriteBuffer(str_size, reinterpret_cast<const uint8_t*>(value.c_str()));
+    writer.DataSection.Write8(0);
+}
+
+
+/////////////////////////////////////
+// FxDeserializeValue specializations
+/////////////////////////////////////
+
+template <>
+void FxDeserializeValue(FxSerializerIO& reader, int32* value)
+{
+    (*value) = reader.DataSection.Read32();
 }
 
 template <>
-void FxDeserializeValue(FxSerializerIO& writer, float32* value)
+void FxDeserializeValue(FxSerializerIO& reader, float32* value)
 {
-    (*value) = writer.DataSection.Read32();
+    (*value) = reader.DataSection.Read32();
+}
+
+template <>
+void FxDeserializeValue(FxSerializerIO& reader, std::string* value)
+{
+    uint32 str_size = reader.DataSection.Read16();
+
+    value->resize(str_size + 1);
+    reader.DataSection.ReadBuffer(str_size + 1, reinterpret_cast<uint8*>(value->data()));
 }

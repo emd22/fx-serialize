@@ -1,11 +1,6 @@
-/**
- * Foxtrot Serialize
- * Version 1.0
- * Ethan MacDonald (@emd22) 2025
- */
+
 
 #include <cstdio>
-#include <iostream>
 
 #include "FxSerialize.hpp"
 
@@ -29,10 +24,13 @@ struct TestStructA
     int32 Y = 15;
     float32 Z = 3;
 
+    std::string HW = "Hello, World";
+    bool ch = false;
+
     TestStructB Other;
 
     // Serializes X, Y, Z, and then serializes the `other` struct
-    FX_SERIALIZABLE_MEMBERS(X, Y, Z, Other);
+    FX_SERIALIZABLE_MEMBERS(X, Y, Z, Other, HW, ch);
 };
 
 struct TestStructC
@@ -75,6 +73,7 @@ int main()
 
         printf("Data2: %d\n", data2.Value);
         printf("Values: {%d, %d, %f}, other.B = %d\n", data.X, data.Y, data.Z, data.Other.B);
+        std::cout << "Str: " << data.HW << "\n";
     }
 
     return 0;

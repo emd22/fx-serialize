@@ -1,3 +1,9 @@
+/**
+ * Foxtrot Serialize
+ * Version 1.0
+ * Ethan MacDonald (@emd22) 2025
+ */
+
 #pragma once
 
 #include "FxTypes.hpp"
@@ -74,9 +80,6 @@
 */
 
 
-uint16* GetSerializeTypeIdCount();
-
-
 class FxSerializeUtil
 {
 public:
@@ -107,6 +110,16 @@ concept C_IsSerializable = requires(T t, FxSerializerIO& writer)
 {
     { t.WriteTo(0, writer) };
 };
+
+
+template <typename T, typename... U>
+concept C_IsAnyOf = (std::same_as<T, U> || ...);
+
+template <typename T>
+concept C_IsByteType = std::is_convertible_v<T, uint8>;
+
+template <typename T>
+concept C_IsIntType = std::is_convertible_v<T, int32>;
 
 class FxSerializerBaseSection
 {
@@ -174,6 +187,17 @@ public:
     uint32 Read32()
     {
         return (static_cast<uint32>(Read16()) << 16 | static_cast<uint32>(Read16()));
+    }
+
+    inline void ReadBuffer(uint32 size, uint8* buffer)
+    {
+        if (Index + size > Size) {
+            printf("ReadBuffer outside of buffer size!");
+            return;
+        }
+        memcpy(Data + Index, buffer, size);
+
+        Index += size;
     }
 
 
@@ -456,16 +480,6 @@ void FxDeserializeValue(FxSerializerIO& writer, T dest)
 }
 
 
-template <typename... Types>
-constexpr void FxSerializeStruct(FxSerializerIO& writer, uint16 type_id, FxHash name_hash, Types... members)
-{
-    FxSerializerDataSection& data = writer.DataSection;
-    data.WriteHeader(type_id, name_hash);
-    (FxSerializeValue<decltype(members)>(writer, members), ...);
-    data.WriteFooter();
-}
-
-
 /**
  * Serializes a structure and writes to the SerializerIO `writer`.
  */
@@ -475,12 +489,39 @@ void FxSerializeValue(FxSerializerIO& writer, const T& value)
     value.WriteTo(0, writer);
 }
 
-
-/** Deserializes an object (struct) */
+/** Deserializes a structure */
 template <typename T> requires C_IsSerializable<T>
-void FxDeserializeValue(FxSerializerIO& writer, T* value)
+void FxDeserializeValue(FxSerializerIO& reader, T* value)
 {
-    value->ReadFrom(0, writer);
+    value->ReadFrom(0, reader);
+}
+
+/**
+ * Serializes a byte-sized value
+ */
+template <typename T> requires C_IsByteType<T>
+void FxSerializeValue(FxSerializerIO& writer, const T& value)
+{
+    writer.DataSection.Write8(value);
+}
+
+/**
+ * Deserializes a byte-sized value
+ */
+template <typename T> requires C_IsByteType<T>
+void FxDeserializeValue(FxSerializerIO& reader, T* value)
+{
+    (*value) = reader.DataSection.Read8();
+}
+
+
+template <typename... Types>
+constexpr void FxSerializeStruct(FxSerializerIO& writer, uint16 type_id, FxHash name_hash, Types... members)
+{
+    FxSerializerDataSection& data = writer.DataSection;
+    data.WriteHeader(type_id, name_hash);
+    (FxSerializeValue<decltype(members)>(writer, members), ...);
+    data.WriteFooter();
 }
 
 template <typename Type>
