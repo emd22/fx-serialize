@@ -397,8 +397,8 @@ private:
 ///////////////////////////////
 
 // Multichars, easy to compare as we just need to compare the signatures as uint32s.
-#define FX_SERIALIZER_IO_FILE_SIGNATURE 'FXSD'
-#define FX_SERIALIZER_IO_SECTION_DATA_SIGNATURE '.DAT'
+#define FX_SERIALIZER_IO_FILE_SIGNATURE 'DSXF' // FXSD
+#define FX_SERIALIZER_IO_SECTION_DATA_SIGNATURE 'TAD.' // .DAT
 
 class FxSerializerIO
 {
@@ -503,7 +503,7 @@ constexpr void FxDeserializeStruct(FxSerializerIO& writer, FxHash name_hash, std
 
     uint32 struct_hash = data.Read32();
     if (struct_hash && struct_hash != name_hash) {
-        printf("Name hashes are not equal!\n");
+        printf("Name hashes are not equal! %x != %x\n", struct_hash, name_hash);
         return;
     }
 

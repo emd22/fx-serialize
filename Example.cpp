@@ -35,6 +35,13 @@ struct TestStructA
     FX_SERIALIZABLE_MEMBERS(X, Y, Z, Other);
 };
 
+struct TestStructC
+{
+    int32 Value;
+
+    FX_SERIALIZABLE_MEMBERS(Value);
+};
+
 int main()
 {
 #ifdef FX_USE_MEMPOOL
@@ -44,9 +51,13 @@ int main()
     {
         FxSerializerIO test_writer;
 
-        TestStructA data { };
+        TestStructA data { 7, 3 };
         data.WriteTo(FxHashStr("TestStructA"), test_writer);
-        test_writer.TypeSection.PrintAllTypes();
+
+        TestStructC data2{100};
+        data2.WriteTo(FxHashStr("TestStructC"), test_writer);
+
+        test_writer.WriteToFile("Test.fxsd");
     }
 
     printf("\nReading serialized values...\n");
@@ -59,6 +70,10 @@ int main()
         TestStructA data{};
         data.ReadFrom(FxHashStr("TestStructA"), test_reader);
 
+        TestStructC data2{};
+        data2.ReadFrom(FxHashStr("TestStructC"), test_reader);
+
+        printf("Data2: %d\n", data2.Value);
         printf("Values: {%d, %d, %f}, other.B = %d\n", data.X, data.Y, data.Z, data.Other.B);
     }
 
