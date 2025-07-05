@@ -17,8 +17,9 @@ struct ExampleStruct
 {
     int SomeValue;
     float32 SomeFloat;
+    std::string SomeString = "Hello, World";
 
-    FX_SERIALIZABLE_MEMBERS(SomeValue, SomeFloat);
+    FX_SERIALIZABLE_MEMBERS(SomeValue, SomeFloat, SomeString);
 };
 ```
 
@@ -40,6 +41,36 @@ ExampleStruct read_data; // Ensure that ExampleStruct
 read_data.ReadFrom(FxHashStr("NameOfObject"), reader);
 ```
 
+As well, you can serialize nested objects:
+```cpp
+struct Vec3f
+{
+    int32 X, Y, Z;
+    FX_SERIALIZABLE_MEMBERS(X, Y, Z);
+};
+
+struct Player
+{
+    std::string Name;
+    Vec3f Position;
+    Vec3f Rotation;
+
+    FX_SERIALIZABLE_MEMBERS(Name, Position, Rotation);
+};
+
+void SaveData()
+{
+    FxSerializerIO writer;
+    
+    Player player{};
+    // ... Set player values ...
+    player.WriteTo(FxHashStr("MainPlayer"), writer);
+
+    writer.SaveToFile("PlayerSave.fxsd");
+}
+```
+
+
 ### File Input/Output
 
 The current state in FxSerializerIO can be written and read from a file to the types and data.
@@ -60,6 +91,6 @@ reader.ReadFromFile("MyFavoriteStruct.fxsd");
 ## Building the Example
 
 ```sh
-cc -std=c++20 Example.cpp
+cc -std=c++20 FxSerializer.cpp Example.cpp
 ./a.out
 ```
